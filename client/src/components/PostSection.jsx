@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { store } from '../../store';
+import { ToastContainer, toast } from 'react-toastify';
+import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from 'react-router-dom';
 import {
     EmojiHappyIcon,
@@ -12,6 +14,19 @@ import { logos } from '../assets';
 import PostComponent from './PostComponent';
 import axios from 'axios';
 import { BASE_URL } from '../../env';
+
+const showSuccessToast = (msg) => {
+  toast.success(msg || `Added Successfully!`, {
+    position: "top-right",
+    autoClose: 500,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    
+  });
+};
 function PostSection() {
   const navigate = useNavigate()
     const logged_user = JSON.parse(localStorage.getItem("user"))
@@ -79,7 +94,10 @@ function PostSection() {
                 job : postResponse.data.user.job,
                 profileImg : postResponse.data.user.profileImg
   }})
-
+  showSuccessToast("Posted")
+  setTimeout(()=>{
+    location.reload()
+  },1200)
    console.log(store.getState().UserUpdateDetails)
   
    //localStorage.removeItem("user")
@@ -109,6 +127,17 @@ function PostSection() {
 
   return (
     <div className=" mt-[100px] m-4  w-[480px] md:w-[890px] mx-auto">
+    <ToastContainer
+        position="top-right"
+        autoClose={800}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
        {logged_user && (
         <div className="flex  border-b border-gray-200 p-3 space-x-3">
           <img

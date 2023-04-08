@@ -50,7 +50,7 @@ function Search(){
                  
                 { on && searchData.length>0 && <div>
                     {searchData.map((i,index)=>(
-                      <p className='p-1 text-md text' key={index}>{i.user_name}</p>
+                      <p className='p-1 cursor-pointer text-md text' key={index}>{i.user_name}</p>
                     ))}
                 </div>}
 
@@ -63,21 +63,26 @@ function Search(){
 }
 
 function Card({post}){
-    return <div className='flex flex-col mt-8'>
+    return <div className='flex flex-col p-7 border mt-[20px] cursor-pointer '>
         <div className='flex space-x-2 items-center'>
-           <img src = {post.profile_image} className='w-10 h-10 object-contain  rounded-full'/>
-           <p className=' font-semibold text-white text-md'>{post.user_name}</p>
+           <img src = {post.postuser.profileImg} className='w-10 h-10 object-contain  rounded-full'/>
+           <p className=' font-semibold text-white text-md'>{post.postuser.user_name}</p>
            <div className=''>
-           <p className='  ml-2 text-[12px]'>{post.created_at}</p>
+           <p className='  ml-2 text-[12px]'>{new Date(post.created_at).toLocaleDateString("IN",{
+            day : "numeric",
+            month : "long",
+            year : "numeric"
+           })}</p>
            </div>
            
         </div>
-        <div className='flex mt-2'>
+        <div className='flex mt-[10px]'>
             {post.description}
         </div>
 
         <div className=''>
-            <img src= {post.image_url} alt = "post_image"/>
+           {post.image !== "" ? <><img className=' hover:cursor-pointer hover:opacity-60 mt-[20px] max-w-[600px]' src= {post.image} alt = "post_image"/></> : <></>}
+            
         </div>
     </div>
 }
@@ -166,6 +171,14 @@ function LoadDemoUser(){
 function PostComponent() {
 
     const [post , setPosts] = useState([])
+    useEffect(()=>{
+        async function getPosts(){
+            const {data} = await axios.get(`${BASE_URL}/posts`);
+            setPosts(data)
+            debugger
+        }
+        getPosts()
+    },[])
     
 
   return (
@@ -176,7 +189,7 @@ function PostComponent() {
        
         </div>
         <div className='  flex flex-col pl-10 pt-7 mt-4 w-full  h-auto '>
-          {posts.map((p)=>(<div key={p.id} className='flex flex-col'>
+          {post.map((p)=>(<div key={p.id} className=' mb-[20px] flex mt-[10px] flex-col'>
                <Card post = {p}/>
           </div>))}
         </div>

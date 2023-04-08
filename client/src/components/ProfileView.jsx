@@ -10,7 +10,12 @@ import { useDispatch } from 'react-redux'
 import axios from 'axios'
 import { BASE_URL } from '../../env'
 
-
+const CONFIG_OBJ = {
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer " + localStorage.getItem("token")
+  }
+}
 
 const showSuccessToast = (msg) => {
   toast.success(msg || `Added Successfully!`, {
@@ -34,6 +39,7 @@ function ProfileView() {
     const [isCurrentUser , setIsCurrentUser] = useState(false)
     const [userDetails , setUserDetails] = useState({})
     const [preview , setPreviewImage] = useState("")
+    const [isFollowed , setIsFollowed] = useState(false)
     const [loading , setLoading] = useState(false)
     const [upimg , setUpImg] = useState(true)
     const [updateUserInfo , setUpdateUserInfo] = useState({
@@ -48,8 +54,31 @@ function ProfileView() {
     const dispatch = useDispatch()
     const params =  useParams();
     const requested_id = params.id;
-    //console.log(requested_id)
+    console.log(logged_user[0])
 
+
+     async function unfollowUser(){
+      const {data} = await axios.get(`${BASE_URL}/unfollow/${requested_id}` , CONFIG_OBJ)
+      dispatch({type : "SETUSERBASICDETAILS" , payload : { followers :data.followers?.length,
+        following : data.following?.length,} })
+        setIsFollowed(false)
+     // debugger
+      //console.log(data)
+     }
+
+      async function followUser(){
+     const {data} = await axios.get(`${BASE_URL}/follow/${requested_id}` , CONFIG_OBJ) 
+    // localStorage.setItem("indicator" , "follwed")
+     debugger
+     dispatch({type : "SETUSERBASICDETAILS" , payload : { followers :data.followers?.length,
+              following : data.following?.length,} })
+              setIsFollowed(true)
+    //  setTimeout(()=>{
+    //   location.reload()
+    //  },500)
+    // debugger;
+    console.log(localStorage.getItem("indicator"))
+      }
 
     async function updateProfileUser(){
       let imgRef;
@@ -101,7 +130,25 @@ function ProfileView() {
       if(logged_user._id === requested_id){
 
         async function callMat(){
-          const response_posts = await axios.post(`${BASE_URL}/finduserposts` ,  {postId : logged_user.posts}  )
+          const {data} = await axios.get(`${BASE_URL}/specificuser/${requested_id}`)
+         
+          dispatch({type : "SETUSERBASICDETAILS" , payload :{
+            user_id : data[0]._id,
+            user_name : data[0].user_name,
+              followers :data[0].followers?.length,
+              following : data[0].following?.length,
+              posts_count: data[0].posts.length,
+              posts : data[0].posts,
+              location : data[0].location,
+              education : data[0].education,
+              user_join : data[0].user_join,
+              job : data[0].job,
+              profileImg : data[0].profileImg
+          }})
+         // localStorage.setItem("user" , JSON.stringify(data))
+         const userUpdatedw = store.getState().UserUpdateDetails;
+          debugger;
+          const response_posts = await axios.post(`${BASE_URL}/finduserposts` ,  {postId : userUpdatedw.posts}  )
           setUserPst(response_posts.data)
         }
        
@@ -109,11 +156,19 @@ function ProfileView() {
         setIsCurrentUser(true);
         callMat();
       }else{
-
+        //console.log()
         async function userFetch ()
         {
           try{
             const {data} = await axios.get(`${BASE_URL}/specificuser/${requested_id}`)
+            const user_follow_corrent = await axios.get(`${BASE_URL}/checkfollow/${requested_id}` ,CONFIG_OBJ)
+            //debugger
+            if(user_follow_corrent.data != "notfind"){
+              setIsFollowed(true)
+            }else{
+              setIsFollowed(false)
+            }
+            debugger
             const userUpdatedw = store.getState().UserUpdateDetails;
        // console.log(userUpdatedw)
          //  ebugger
@@ -152,7 +207,7 @@ function ProfileView() {
         userFetch();
         
       }
-    },[])
+    },[isFollowed])
 
   return (
     <div>
@@ -215,7 +270,7 @@ function ProfileView() {
                     <div className="relative">
                       <img
                         alt="..."
-                        src={ isCurrentUser ?  logged_user.profileImg  : store.getState().UserUpdateDetails.profileImg}
+                        src={ store.getState().UserUpdateDetails.profileImg}
                         className="shadow-xl rounded-full h-auto align-middle border-none absolute -m-16 -ml-20 lg:-ml-16"
                         style={{ maxWidth: "150px" }}
                       />
@@ -230,7 +285,13 @@ function ProfileView() {
                        
                       
                       </> : <>
-                      <label htmlFor="my-modal-5" className="btn">Follow</label>
+
+                      { isFollowed ? <>
+                        <button  onClick={unfollowUser} className = "btn">UnFollow</button>
+                      </> :  <>
+                         <button onClick={followUser} className = "btn">Follow</button>
+                      </>}
+                      {/* <label htmlFor="my-modal-5" className="btn">Follow</label> */}
                       
                       
                       </>
@@ -247,7 +308,7 @@ function ProfileView() {
                         {
                           isCurrentUser ? <>
                           <span className="text-xl font-bold block uppercase tracking-wide text-gray-700">
-                          {logged_user_records ? logged_user_records.followers : logged_user.followers.length}
+                          { store.getState().UserUpdateDetails.followers}
                         </span>
                         <span className="text-sm text-gray-500">followers</span>
                           </> : <>
@@ -269,12 +330,12 @@ function ProfileView() {
                       {
                           isCurrentUser ? <>
                           <span className="text-xl font-bold block uppercase tracking-wide text-gray-700">
-                          {logged_user_records ? logged_user_records.following :logged_user.following.length}
+                          { store.getState().UserUpdateDetails.following}
                         </span>
                         <span className="text-sm text-gray-500">followings</span>
                           </> : <>
                           <span className="text-xl font-bold block uppercase tracking-wide text-gray-700">
-                          {userDetails.followers}
+                          {userDetails.following}
                         </span>
                         <span className="text-sm text-gray-500">followings</span>
                           </>
@@ -288,7 +349,7 @@ function ProfileView() {
                       {
                           isCurrentUser ? <>
                           <span className="text-xl font-bold block uppercase tracking-wide text-gray-700">
-                          {logged_user_records ? logged_user_records.posts_count : logged_user.posts.length}
+                          {store.getState().UserUpdateDetails.posts_count}
                         </span>
                         <span className="text-sm text-gray-500">posts</span>
                           </> : <>
@@ -310,7 +371,7 @@ function ProfileView() {
                   {
                           isCurrentUser ? <>
                           <span className="text-xl font-bold block uppercase tracking-wide text-gray-700">
-                          {logged_user.user_name}
+                          {store.getState().UserUpdateDetails.user_name}
                         </span>
                       
                           </> : <>
@@ -328,7 +389,7 @@ function ProfileView() {
                     {
                           isCurrentUser ? <>
                           <span className="text-xl font-bold block uppercase tracking-wide text-gray-400">
-                          {logged_user.location}
+                          {store.getState().UserUpdateDetails.location}
                           {/* demo location */}
                         </span>
                        
@@ -348,7 +409,7 @@ function ProfileView() {
 
                        {isCurrentUser ? <>
                         <i className="fas fa-briefcase mr-2 text-lg text-gray-500"></i>
-                        <>{logged_user.job}</>
+                        <>{store.getState().UserUpdateDetails.job}</>
                        </> : <>
                        <i className="fas fa-briefcase mr-2 text-lg text-gray-500"></i>
                        {userDetails.job}
@@ -362,7 +423,7 @@ function ProfileView() {
                  
                     {isCurrentUser ? <>
                       <i className="fas fa-university mr-2 text-lg text-gray-500"></i>
-                        <>{logged_user.education}</>
+                        <>{store.getState().UserUpdateDetails.education}</>
                        </> : <>
                        <i className="fas fa-university mr-2 text-lg text-gray-500"></i>
                        {userDetails.education}
